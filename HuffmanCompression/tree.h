@@ -1,9 +1,9 @@
-#ifndef HUFF_TREE
-#define HUFF_TREE
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+
+#ifndef TREE
+#define TREE
 
 /* a binary tree with two members
  * n holds the character to be encoded (or -1 if the Tree is a branch)
@@ -22,10 +22,10 @@ void sortTreesDescending(Tree**, int);
 int getTreeCount(Tree**);
 Tree* branchFromTrees(Tree*, Tree*);
 void makeTreeFromSorted(Tree**);
-void exploreTree(Tree*, int, int**, int);
-int** makeEncodingTable(Tree**);
+void explore_Tree(Tree*, int, int**, int);
+int** makeEncoding_Table(Tree**);
 
-#endif /*HUFF_TREE*/
+#endif /*TREE*/
 
 
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "huffTree.h"
+#include "tree.h"
 
 #ifndef UNHUFF
 #define UNHUFF
