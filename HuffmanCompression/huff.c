@@ -4,27 +4,17 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "huffTree.h"
+#include "tree.h"
+#include "encoder.h"
 
 #include "huff.h"
 #include "unhuff.h"
 
-
-//testing
-void printTree(Tree*);
-void testTreeSort(void);
-void testTreeAssembly(void);
-void testEncodingTable(void);
-
 int main() {
-	//testTreeSort();
-	//testTreeAssembly();
-	//testEncodingTable();
 	huff("test.txt", "tested.huff");
-	unhuff("tested.huff", "tested.txt");
+	//unhuff("tested.huff", "tested.txt");
 	return 0;
 }
-
 
 //returns a pointer to a UNIQUE_BYTES-length pointer to future Tree structures, which hold the frequency of each unicode character
 Tree** initializeUnicodeFrequencies() {
@@ -50,10 +40,10 @@ void getUnicodeFrequencies(Tree** uni, long long* counts, FILE* fp) {
 	return;
 }
 
-int getPaddingBits(long long* count, int** table) {
+int getPaddingBits(long long* count, Encoder** table) {
 	int paddingBits = 0;
 	for (int i = 0; i < (int)UNIQUE_BYTES; i++) if (table[i]) {
-		paddingBits += (count[i] % 8) * table[i][0];
+		paddingBits += (count[i] % 8) * table[i]->bits;
 		paddingBits %= 8;
 	}
 	return (8 - paddingBits) % 8;
@@ -109,29 +99,31 @@ void writeHeader(FILE* fp, int paddingBits, int treeBits, uint8_t* bitTree) {
 	return;
 }
 
-int huffmanCompress(int** table, FILE* fpi, FILE* fpo) {
-	int n = -1;
-	int acm = 0;//accumulator
-	int* encoding;
+//CRT doesn't like this function in debug mode, but it functions correctly without memory errors in Release mode
+int huffmanCompress(Encoder** table, FILE* fpi, FILE* fpo) {
 	uint8_t c, code;
-	while (fread(&c, 1, 1, fpi)) if ((encoding = table[c]) != NULL) {
-		acm = (acm << encoding[0]) + encoding[1];
-		n += encoding[0];
-		if (n > 6) {
-			n -= 8;
-			code = (uint8_t)((acm & (255 << (n + 1))) >> (n + 1));
-			fwrite(&code, 1, 1, fpo);
+	Encoder* e = EncoderConstructor();
+	e->bits = 0;
+	e->bytes = 0;
+	uint8_t* n = (uint8_t*)malloc(34 * sizeof(uint8_t));
+	for (int i = 0; i < 33; i++)
+		n[i] = 0;
+	n[33] = '\0';
+	e->code = n;
+	while (fread(&c, 1, 1, fpi)) {
+		addToEncoder(e, table[c]);
+		while (e->bits > 8) {
+			c = removeFirstByte(e);
+			fwrite(&c, 1, 1, fpo);
 		}
-	} else {
-		printf("%c's encoding is missing!\n", c);
 	}
-	int padding = 0;
-	if (n > -1) {
-		padding = 7 - n;
-		code = ((acm << padding) & 255);
-		fwrite(&code, 1, 1, fpo);
+	if (e->bits > 0) {
+		c = removeFirstByte(e);
+		fwrite(&c, 1, 1, fpo);
 	}
-	return padding;
+	c = -1 * (e->bits);
+	EncoderDestructor(e);
+	return c;
 }
 
 void huff(char* fileIn, char* fileOut) {
@@ -154,7 +146,10 @@ void huff(char* fileIn, char* fileOut) {
 	fseek(fpi, 0, SEEK_SET);
 	sortTreesDescending(uni, (int)UNIQUE_BYTES);
 	makeTreeFromSorted(uni);
-	int** table = makeEncodingTable(uni);
+	Encoder** table = makeEncoder(uni);
+	for (int i = 0; i < 256; i++) if (table[i] != NULL) {
+		printf("%c : %d\n", (char)i, (table[i]->code)[0]);
+	}
 	//printf("%d, %d\n", table['o'][0], table['o'][1]);
 
 	//create the header from the tree and encoding, then write it to the output file
@@ -163,12 +158,12 @@ void huff(char* fileIn, char* fileOut) {
 	uint8_t* bitTree = (uint8_t*)calloc(320, sizeof(uint8_t));
 	getPreorderFromTree(*uni, bitTree, &treeBits);
 	//bitTree[treeBits / 8] = bitTree[treeBits / 8] << ((8 - treeBits % 8) % 8);
-	//printf("%d\n", treeBits);
 	writeHeader(fpo, paddingBits, treeBits, bitTree);
+	printf("header written\n");
 
 	//Huffman compress
-	//printf("%d\n", huffmanCompress(table, fpi, fpo) - paddingBits);
-	huffmanCompress(table, fpi, fpo);
+	printf("%d\n", huffmanCompress(table, fpi, fpo) - paddingBits);
+	//huffmanCompress(table, fpi, fpo);
 
 	//clean up
 	fclose(fpi);

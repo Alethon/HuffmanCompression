@@ -76,7 +76,7 @@ void unhuff(char* fileIn, char* fileOut) {
 	uint8_t* bitTree = readBitTree(fpi, treeBits);
 	Tree** uni = (Tree**)malloc(sizeof(Tree*));
 	*uni = makeTreeFromBits(bitTree, &n);
-	int** table = makeEncodingTable(uni);
+	//int** table = makeEncodingTable(uni);
 	/*for (int i = 0; i < (int)UNIQUE_BYTES; i++) {
 		if (table[i] != NULL) {
 			printf("%c: %d, %d\n", (char)i, table[i][0], table[i][1]);
@@ -96,6 +96,7 @@ void unhuff(char* fileIn, char* fileOut) {
 	return;
 }
 
+/*
 void printTree(Tree* t) {
 	if (t == NULL) {
 		printf("");
@@ -162,3 +163,4 @@ void testEncodingTable() {
 	}
 	return;
 }
+*/

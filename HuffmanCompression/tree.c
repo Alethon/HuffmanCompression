@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "huffTree.h"
+#include "tree.h"
 
 //allocates and initializes a Tree (branch), returning its pointer
 Tree* TreeConstructor() {
@@ -74,7 +74,7 @@ void makeTreeFromSorted(Tree** uni) {
 	return;
 }
 
-void exploreTree(Tree* t, int loc, int** table, int n) {
+void explore_Tree(Tree* t, int loc, int** table, int n) {
 	if (t->left == NULL) {
 		table[t->n] = (int*)malloc(2 * sizeof(int));
 		table[t->n][0] = n - 1;
@@ -88,7 +88,7 @@ void exploreTree(Tree* t, int loc, int** table, int n) {
 	return;
 }
 
-int** makeEncodingTable(Tree** uni) {
+int** makeEncoding_Table(Tree** uni) {
 	int** table = (int**)calloc((int)UNIQUE_BYTES, sizeof(int*));
 	exploreTree(uni[0], 0, table, 1);
 	return table;
