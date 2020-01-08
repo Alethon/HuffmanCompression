@@ -5,7 +5,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <stdint.h>
 
 /* a binary tree with two members
@@ -18,17 +17,6 @@ typedef struct _Tree {
 	long long f;
 	uint8_t n;
 } Tree;
-
-typedef struct _Node {
-	struct _Node * next;
-	struct _Node * prev;
-	char c;
-	char * address;
-} Node;
-
-typedef struct _List {
-	Node * head;
-} List;
 
 #endif /*HUFF*/
 
