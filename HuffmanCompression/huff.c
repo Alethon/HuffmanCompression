@@ -11,8 +11,22 @@
 #include "unhuff.h"
 
 int main() {
-	huff("test.txt", "tested.huff");
-	//unhuff("tested.huff", "tested.txt");
+	//huff("test.txt", "tested.huff");
+	//printf("compressed\n");
+	/*FILE* fpo;
+	fopen_s(&fpo, "tested.huff", "r");
+	if (fpo == NULL) {
+		return 0;
+	}
+	uint8_t c;
+	int d = 0;
+	for (int i = 0; i < 17; i++) {
+		fread(&c, 1, 1, fpo);
+		printf("read %02x\n", c);
+		++d;
+	}*/
+	//printf("%d bytes read\n", d);
+	unhuff("tested.huff", "tested.txt");
 	return 0;
 }
 
@@ -60,10 +74,8 @@ void getPreorderFromTree(Tree* t, uint8_t* bitTree, int* bits) {
 		if (*bits % 8 > 0)
 			bitTree[i + 1] = (t->n) << (8 - *bits % 8);
 		*bits = *bits + 8;
-		//printf("%d ", (int)t->n);
 	} else {
 		//write branch
-		//printf("branch ");
 		*bits = *bits + 1;
 		//write left
 		getPreorderFromTree(t->left, bitTree, bits);
@@ -78,9 +90,9 @@ void getPreorderFromTree(Tree* t, uint8_t* bitTree, int* bits) {
 void writeHeader(FILE* fp, int paddingBits, int treeBits, uint8_t* bitTree) {
 	uint8_t c;
 	uint16_t d;
-	for (int i = 0; i < 40; i++)
-		printf("%02x", bitTree[i]);
-	printf("\n\n");
+	//for (int i = 0; i < 40; i++)
+	//	printf("%02x", bitTree[i]);
+	//printf("\n\n");
 
 	//write padding and tree specs
 	d = (paddingBits << 12) + treeBits;
@@ -89,13 +101,12 @@ void writeHeader(FILE* fp, int paddingBits, int treeBits, uint8_t* bitTree) {
 	//write bitTree (zero-padded)
 	int n = (treeBits / 8) + (treeBits % 8 ? 1 : 0);//number of bytes to write from bitTree
 	fwrite(bitTree, 1, n, fp);
+	printf("%d\n", n + 2);
 	/*fwrite(bitTree, 8, n / 8, fp);//writing the fully-populated unsigned longs
 	for (int i = 7; i > 7 - n % 8; i--) {
 		c = (bitTree[n / 8] >> (8 * i)) & 255;
 		fwrite(&c, 1, 1, fp);
 	}*/
-
-
 	return;
 }
 
@@ -111,18 +122,21 @@ int huffmanCompress(Encoder** table, FILE* fpi, FILE* fpo) {
 	n[33] = '\0';
 	e->code = n;
 	while (fread(&c, 1, 1, fpi)) {
+		//printf("read %c\n", (char)c);
 		addToEncoder(e, table[c]);
 		while (e->bits > 8) {
 			c = removeFirstByte(e);
+			printf("wrote %02x\n", c);
 			fwrite(&c, 1, 1, fpo);
 		}
 	}
 	if (e->bits > 0) {
 		c = removeFirstByte(e);
 		fwrite(&c, 1, 1, fpo);
+		printf("wrote %02x\n", c);
 	}
 	c = -1 * (e->bits);
-	EncoderDestructor(e);
+	//EncoderDestructor(e);
 	return c;
 }
 
@@ -148,7 +162,7 @@ void huff(char* fileIn, char* fileOut) {
 	makeTreeFromSorted(uni);
 	Encoder** table = makeEncoder(uni);
 	for (int i = 0; i < 256; i++) if (table[i] != NULL) {
-		printf("%c : %d\n", (char)i, (table[i]->code)[0]);
+		printf("%c : %02x, %d\n", (char)i, (table[i]->code)[0], table[i]->bits);
 	}
 	//printf("%d, %d\n", table['o'][0], table['o'][1]);
 
@@ -159,11 +173,11 @@ void huff(char* fileIn, char* fileOut) {
 	getPreorderFromTree(*uni, bitTree, &treeBits);
 	//bitTree[treeBits / 8] = bitTree[treeBits / 8] << ((8 - treeBits % 8) % 8);
 	writeHeader(fpo, paddingBits, treeBits, bitTree);
-	printf("header written\n");
+	//printf("header written\n");
 
 	//Huffman compress
-	printf("%d\n", huffmanCompress(table, fpi, fpo) - paddingBits);
-	//huffmanCompress(table, fpi, fpo);
+	//printf("%d\n", huffmanCompress(table, fpi, fpo) - paddingBits);
+	huffmanCompress(table, fpi, fpo);
 
 	//clean up
 	fclose(fpi);

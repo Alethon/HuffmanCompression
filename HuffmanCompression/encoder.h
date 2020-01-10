@@ -21,5 +21,6 @@ void exploreTree(Tree*, Encoder*, Encoder**);
 Encoder** makeEncoder(Tree**);
 void addToEncoder(Encoder*, Encoder*);
 uint8_t removeFirstByte(Encoder*);
+int getCodeCount(Encoder**);
 
 #endif /*ENCODER*/ 
